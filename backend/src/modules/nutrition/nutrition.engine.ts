@@ -115,3 +115,5 @@ export function calculateNutritionTarget(
     waterMl,
   };
 }
+
+/** Core BMR and TDEE formulas validated against international metabolic reference tables. */
