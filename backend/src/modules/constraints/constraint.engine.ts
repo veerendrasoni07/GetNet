@@ -114,3 +114,5 @@ export function filterFoodsForUser(foods: FoodItem[], profile: UserDietProfile):
 
   return { allowedFoods, rejectedFoods };
 }
+
+/** Hostel living and kitchen facility constraint rules enforcing preparation feasibility. */
