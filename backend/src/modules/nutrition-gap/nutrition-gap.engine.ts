@@ -37,3 +37,5 @@ export function calculateNutritionGap(
     fiberGap,
   };
 }
+
+/** Nutrition gap assessment detects critical deficits in key vitamins, minerals, and protein. */
