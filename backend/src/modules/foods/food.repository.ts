@@ -303,3 +303,5 @@ export function enrichFoodMetrics(food: Omit<FoodItem, 'costPer10gProtein' | 'co
 export function getAllFoods(): FoodItem[] {
   return INITIAL_FOOD_DATABASE.map(enrichFoodMetrics);
 }
+
+/** Food repository provides verified nutritional profiles tailored for student and budget diets. */
