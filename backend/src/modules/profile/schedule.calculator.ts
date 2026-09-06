@@ -67,3 +67,5 @@ export function deriveMealWindows(schedule: ScheduleProfile): MealWindow[] {
 
   return windows;
 }
+
+/** Helper functions for mapping student daily schedule windows to nutritional timing. */
