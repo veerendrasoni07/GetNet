@@ -1,11 +1,7 @@
-import {
-  ActivityLevel,
-  Goal,
-  NutritionProfile,
-  NutritionTarget,
-} from './nutrition.types';
+import { BodyProfile, TrainingProfile } from '../profile/profile.types';
+import { DetailedNutritionTarget } from './nutrition.types';
 
-const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
+const BASE_ACTIVITY_MULTIPLIERS: Record<string, number> = {
   sedentary: 1.2,
   light: 1.375,
   moderate: 1.55,
@@ -13,157 +9,109 @@ const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   very_high: 1.9,
 };
 
-function calculateBmr(profile: NutritionProfile): number {
-  const { weightKg, heightCm, age, sex } = profile;
-
-  const base =
-    10 * weightKg +
-    6.25 * heightCm -
-    5 * age;
-
-  return sex === 'male'
-    ? base + 5
-    : base - 161;
+export function calculateBmr(body: BodyProfile): number {
+  const { weightKg, heightCm, age, sex } = body;
+  // Mifflin-St Jeor Equation
+  const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
+  return sex === 'male' ? base + 5 : base - 161;
 }
 
-function calculateTdee(
-  bmr: number,
-  activityLevel: ActivityLevel,
-): number {
-  return bmr * ACTIVITY_MULTIPLIERS[activityLevel];
+export function calculateTdee(body: BodyProfile, training: TrainingProfile): number {
+  const bmr = calculateBmr(body);
+  let multiplier = BASE_ACTIVITY_MULTIPLIERS[training.activityLevel] || 1.4;
+
+  // Additional activity credit for weight training volume
+  if (training.liftsWeights && training.trainingDaysPerWeek > 0) {
+    const weeklyWorkoutHours = (training.trainingDaysPerWeek * training.workoutDurationMinutes) / 60;
+    multiplier += weeklyWorkoutHours * 0.02; // slight adjustment based on volume
+  }
+
+  return bmr * multiplier;
 }
 
-function calculateGoalCalories(
-  tdee: number,
-  goal: Goal,
-): number {
+export function calculateGoalCalories(tdee: number, goal: BodyProfile['goal']): number {
   switch (goal) {
     case 'fat_loss':
-      return tdee - 400;
-
+      return tdee - 450;
     case 'muscle_gain':
-      return tdee + 250;
-
+      return tdee + 275;
+    case 'recomposition':
+      return tdee - 150;
     case 'maintenance':
       return tdee;
   }
 }
 
-function calculateProtein(
-  weightKg: number,
-  goal: Goal,
-): number {
-  switch (goal) {
-    case 'fat_loss':
-      return weightKg * 1.8;
+export function calculateProteinTarget(body: BodyProfile, training: TrainingProfile): { target: number; min: number; max: number } {
+  let gPerKg = 1.6;
 
-    case 'muscle_gain':
-      return weightKg * 2.0;
-
-    case 'maintenance':
-      return weightKg * 1.6;
+  if (training.liftsWeights) {
+    if (body.goal === 'fat_loss') {
+      gPerKg = 2.2; // higher protein preservation in deficit
+    } else if (body.goal === 'muscle_gain') {
+      gPerKg = 2.0;
+    } else {
+      gPerKg = 1.8;
+    }
+  } else {
+    if (body.goal === 'muscle_gain') gPerKg = 1.8;
+    else if (body.goal === 'fat_loss') gPerKg = 1.8;
   }
-}
 
-function calculateFat(
-  weightKg: number,
-): number {
-  return weightKg * 0.8;
-}
+  const target = Math.round(body.weightKg * gPerKg);
+  const min = Math.round(target * 0.9);
+  const max = Math.round(target * 1.15);
 
-function calculateCarbohydrates(
-  calories: number,
-  protein: number,
-  fat: number,
-): number {
-  const proteinCalories = protein * 4;
-  const fatCalories = fat * 9;
-
-  const remainingCalories =
-    calories -
-    proteinCalories -
-    fatCalories;
-
-  return Math.max(0, remainingCalories / 4);
-}
-
-function calculateFiber(
-  calories: number,
-): number {
-  return (calories / 1000) * 14;
-}
-
-function calculateWater(
-  weightKg: number,
-): number {
-  return weightKg * 35;
+  return { target, min, max };
 }
 
 export function calculateNutritionTarget(
-  profile: NutritionProfile,
-): NutritionTarget {
-  const bmr = calculateBmr(profile);
+  body: BodyProfile,
+  training: TrainingProfile
+): DetailedNutritionTarget {
+  const bmr = Math.round(calculateBmr(body));
+  const tdee = Math.round(calculateTdee(body, training));
+  const caloriesTarget = Math.round(calculateGoalCalories(tdee, body.goal));
 
-  const tdee = calculateTdee(
-    bmr,
-    profile.activityLevel,
-  );
+  const protein = calculateProteinTarget(body, training);
 
-  const calories = calculateGoalCalories(
-    tdee,
-    profile.goal,
-  );
+  // Fat recommendation: ~0.8g to 1.0g / kg
+  const fatTarget = Math.max(40, Math.round(body.weightKg * 0.85));
 
-  const protein = calculateProtein(
-    profile.weightKg,
-    profile.goal,
-  );
+  // Carbohydrate recommendation: remaining calories
+  const proteinCalories = protein.target * 4;
+  const fatCalories = fatTarget * 9;
+  const remainingCalories = caloriesTarget - proteinCalories - fatCalories;
+  const carbsTarget = Math.max(50, Math.round(remainingCalories / 4));
 
-  const fat = calculateFat(
-    profile.weightKg,
-  );
+  const fiberTarget = Math.round((caloriesTarget / 1000) * 14);
 
-  const carbohydrates = calculateCarbohydrates(
-    calories,
-    protein,
-    fat,
-  );
-
-  const fiber = calculateFiber(calories);
-
-  const waterMl = calculateWater(
-    profile.weightKg,
-  );
+  // Hydration: 35ml / kg + workout extra (500ml per hour of workout)
+  const workoutExtraWater = training.liftsWeights ? (training.workoutDurationMinutes / 60) * 500 : 0;
+  const waterMl = Math.round(body.weightKg * 35 + workoutExtraWater);
 
   return {
+    bmr,
+    tdee,
     calories: {
-      target: Math.round(calories),
-      min: Math.round(calories * 0.95),
-      max: Math.round(calories * 1.05),
+      target: caloriesTarget,
+      min: Math.round(caloriesTarget * 0.95),
+      max: Math.round(caloriesTarget * 1.05),
     },
-
-    protein: {
-      target: Math.round(protein),
-      min: Math.round(protein * 0.9),
-      max: Math.round(protein * 1.1),
-    },
-
+    protein,
     carbohydrates: {
-      target: Math.round(carbohydrates),
-      min: Math.round(carbohydrates * 0.9),
-      max: Math.round(carbohydrates * 1.1),
+      target: carbsTarget,
+      min: Math.round(carbsTarget * 0.9),
+      max: Math.round(carbsTarget * 1.1),
     },
-
     fat: {
-      target: Math.round(fat),
-      min: Math.round(fat * 0.9),
-      max: Math.round(fat * 1.1),
+      target: fatTarget,
+      min: Math.round(fatTarget * 0.85),
+      max: Math.round(fatTarget * 1.15),
     },
-
     fiber: {
-      target: Math.round(fiber),
+      target: fiberTarget,
     },
-
-    waterMl: Math.round(waterMl),
+    waterMl,
   };
 }
