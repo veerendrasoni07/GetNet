@@ -124,3 +124,5 @@ export function calculateExistingDiet(
     mealEstimates,
   };
 }
+
+/** Existing diet engine computes baseline micronutrient and caloric averages from meal recalls. */
