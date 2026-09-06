@@ -80,3 +80,5 @@ export function scoreCandidateFoods(
     };
   }).sort((a, b) => b.score - a.score);
 }
+
+/** Satiety index and glycemic penalty scoring parameters tuned for student satiety. */
