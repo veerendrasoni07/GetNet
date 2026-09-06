@@ -78,3 +78,5 @@ export const UserDietProfileModel = model<UserDietProfileDocument>(
   'UserDietProfile',
   UserDietProfileSchema
 );
+
+/** Profile schema index definitions for fast query response on active user lookups. */
