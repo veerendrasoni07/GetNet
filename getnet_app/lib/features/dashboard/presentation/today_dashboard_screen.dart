@@ -296,3 +296,5 @@ class _TodayDashboardScreenState extends ConsumerState<TodayDashboardScreen> {
     );
   }
 }
+
+// Main student dashboard displaying circular calorie ring, macro splits, and timeline items.
