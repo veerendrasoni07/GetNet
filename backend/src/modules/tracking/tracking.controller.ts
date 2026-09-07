@@ -83,3 +83,5 @@ export async function adaptiveCheckinHandler(req: Request, res: Response): Promi
     res.status(500).json({ success: false, error: error.message });
   }
 }
+
+/** Tracking controller manages daily food intake logs and weight progression history. */
