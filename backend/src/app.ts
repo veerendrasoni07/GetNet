@@ -30,3 +30,5 @@ app.use((err: any, req: Request, res: Response, next: any) => {
 });
 
 export default app;
+
+/** Express application instance with security headers, CORS policies, and request parsers. */
