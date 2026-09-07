@@ -32,3 +32,5 @@ router.post('/tracking/weight', logWeightHandler);
 router.post('/tracking/adaptive-checkin', adaptiveCheckinHandler);
 
 export default router;
+
+/** Centralized API routing table registering all microservice endpoints under /api. */
