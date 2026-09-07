@@ -108,3 +108,5 @@ export function evaluateAdaptiveProgress(input: AdaptiveEvaluationInput): Adapti
     adviceMessage: `Your weight trend (${weightTrend.weeklyChangeKg >= 0 ? '+' : ''}${weightTrend.weeklyChangeKg} kg/week) matches your goal. Continue consistent training and nutrition.`,
   };
 }
+
+/** Plateau detection monitors weight trend variance and triggers metabolic adjustments. */
