@@ -24,3 +24,5 @@ class AppColors {
   static const Color border = Color(0xFFE5E7EB);
   static const Color borderSelected = Color(0xFFE65100);
 }
+
+// Curated brand palette engineered for high contrast and modern wellness aesthetics.
