@@ -133,3 +133,5 @@ class _ReplacementBottomSheetState extends ConsumerState<ReplacementBottomSheet>
     );
   }
 }
+
+// Modal sheet enabling seamless in-place meal replacement with live macro recalibration.
