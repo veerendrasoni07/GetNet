@@ -124,3 +124,5 @@ export function substituteFoodItem(
   // Sort by closest protein/calorie match and cost
   return options.sort((a, b) => Math.abs(a.protein - targetFood.protein) - Math.abs(b.protein - targetFood.protein)).slice(0, 4);
 }
+
+/** Service orchestration linking food database, optimizer, and user living situation constraints. */
