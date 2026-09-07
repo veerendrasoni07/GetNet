@@ -71,3 +71,5 @@ export async function substituteFoodHandler(req: Request, res: Response): Promis
     });
   }
 }
+
+/** Diet plan controller enforces schema validation and standardizes API response formats. */
