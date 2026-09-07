@@ -339,3 +339,5 @@ class _MetricCard extends StatelessWidget {
     );
   }
 }
+
+// Gamified progress view featuring animated streak flames, weight trend charts, and badge achievements.
