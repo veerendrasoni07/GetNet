@@ -25,3 +25,5 @@ class GetNutritionApp extends StatelessWidget {
     );
   }
 }
+
+// Root application launcher initializing Firebase, theme modes, and GoRouter root.
