@@ -137,3 +137,5 @@ export function optimizeDietPlan(
     budgetAnalysisMessage,
   };
 }
+
+/** Greedy knapsack heuristic generating balanced daily meal plans within target macro bounds. */
