@@ -36,3 +36,5 @@ export function calculateWeightTrend(
     trendDirection,
   };
 }
+
+/** Exponentially weighted moving average (EWMA) smooths daily water weight fluctuations. */
