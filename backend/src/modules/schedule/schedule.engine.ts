@@ -131,3 +131,5 @@ export function generateDailySchedule(
     },
   };
 }
+
+/** Chrono-nutrition meal timing ensuring pre and post-workout nutrient availability. */
