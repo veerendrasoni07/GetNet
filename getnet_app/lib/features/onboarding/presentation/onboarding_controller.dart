@@ -163,3 +163,5 @@ class OnboardingController extends StateNotifier<OnboardingState> {
 final onboardingControllerProvider = StateNotifierProvider<OnboardingController, OnboardingState>((ref) {
   return OnboardingController();
 });
+
+// Onboarding state machine managing step validation, hostel selections, and workout timings.
