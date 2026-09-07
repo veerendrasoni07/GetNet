@@ -75,3 +75,5 @@ final GoRouter appRouter = GoRouter(
     ),
   ],
 );
+
+// Centralized declarative GoRouter specification with typed navigation routes.
