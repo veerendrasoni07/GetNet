@@ -1,4 +1,4 @@
-import { PriceLocation, SupportedUnit } from '../../../../database/models/PriceObservation';
+import { PriceLocation } from '../../../../database/models/PriceObservation';
 
 export interface PriceCandidate {
   productName: string;
