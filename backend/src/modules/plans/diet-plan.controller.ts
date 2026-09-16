@@ -18,6 +18,16 @@ export async function generateDietPlanHandler(req: Request, res: Response): Prom
 
     const plan = generateCompleteDietPlan(fullProfile, messSelections || []);
 
+    const userId = (req as any).user?.userId;
+    if (userId) {
+      try {
+        const User = (await import('../../database/models/User')).default;
+        await User.findByIdAndUpdate(userId, { hasCompletedOnboarding: true });
+      } catch (e) {
+        console.warn('Could not update user onboarding flag:', e);
+      }
+    }
+
     res.status(200).json({
       success: true,
       message: 'Physique-focused diet plan generated successfully',

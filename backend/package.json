@@ -7,13 +7,19 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "jest --runInBand --detectOpenHandles"
+    "test": "jest --runInBand --detectOpenHandles",
+    "data:seed-foods": "tsx src/modules/foods/cli/seed-foods.ts",
+    "data:sync-nutrition": "tsx src/modules/foods/cli/sync-nutrition.ts",
+    "data:sync-prices": "tsx src/modules/foods/cli/sync-prices.ts",
+    "data:validate": "tsx src/modules/foods/cli/validate-foods.ts",
+    "data:report": "tsx src/modules/foods/cli/data-report.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^4.22.2",
+    "google-auth-library": "^11.0.2",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.24.3",

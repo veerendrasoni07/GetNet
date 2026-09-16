@@ -4,6 +4,18 @@ export type RotiPortion = 0 | 1 | 2 | 3 | 4 | 5;
 export type BowlPortion = 'none' | 'half' | 'medium' | 'large';
 export type SabziPortion = 'small' | 'medium' | 'large';
 
+export type BreakfastType =
+  | 'poha'
+  | 'upma'
+  | 'idli_sambar'
+  | 'dosa'
+  | 'paratha'
+  | 'chilla'
+  | 'oats_dalia'
+  | 'sprouts'
+  | 'bread_omelette'
+  | 'roti_sabzi';
+
 export interface MessMealSelection {
   mealName: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   rotiCount: RotiPortion;
@@ -11,6 +23,8 @@ export interface MessMealSelection {
   dalPortion: BowlPortion;
   sabziPortion: SabziPortion;
   eggCount?: number;
+  breakfastType?: BreakfastType;
+  breakfastQuantity?: number;
 }
 
 export interface MessDietInput {

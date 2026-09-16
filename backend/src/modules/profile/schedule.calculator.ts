@@ -17,53 +17,109 @@ export function deriveMealWindows(schedule: ScheduleProfile): MealWindow[] {
   const collegeStart = parseTimeToMinutes(schedule.collegeWorkStartTime || '09:00');
   const collegeEnd = parseTimeToMinutes(schedule.collegeWorkEndTime || '16:00');
   const workout = parseTimeToMinutes(schedule.workoutTime || '18:00');
-  const sleep = parseTimeToMinutes(schedule.sleepTime || '00:00');
+  const rawSleep = parseTimeToMinutes(schedule.sleepTime || '00:00');
+  const sleep = rawSleep <= wake ? rawSleep + 1440 : rawSleep;
 
   const windows: MealWindow[] = [];
+  const isMorningWorkout = workout < collegeStart || (workout <= 600 && workout > wake);
 
-  // Breakfast window: e.g. Wake+15m to CollegeStart-15m (or Wake+90m)
-  const bfStart = wake + 15;
-  const bfEnd = Math.min(collegeStart - 15, wake + 90);
-  windows.push({
-    name: 'Breakfast',
-    startTime: formatMinutesToTime(bfStart),
-    endTime: formatMinutesToTime(bfEnd > bfStart ? bfEnd : bfStart + 45),
-  });
+  if (isMorningWorkout) {
+    // Pre-workout snack
+    const preStart = wake + 10 < workout - 20 ? wake + 10 : workout - 30;
+    windows.push({
+      name: 'Pre-Workout Snack',
+      startTime: formatMinutesToTime(preStart),
+      endTime: formatMinutesToTime(workout),
+    });
 
-  // Mid-day / Lunch window: e.g. around 13:00 - 14:00 (or halfway in college/work)
-  const midCollege = Math.floor((collegeStart + collegeEnd) / 2);
-  windows.push({
-    name: 'Lunch',
-    startTime: formatMinutesToTime(midCollege - 30),
-    endTime: formatMinutesToTime(midCollege + 30),
-  });
+    // Post-workout breakfast
+    const bfStart = workout + 75 + 15;
+    const bfEnd = collegeStart - 15 > bfStart + 30 ? collegeStart - 15 : bfStart + 60;
+    windows.push({
+      name: 'Breakfast',
+      startTime: formatMinutesToTime(bfStart),
+      endTime: formatMinutesToTime(bfEnd),
+    });
 
-  // Pre-Workout window: e.g. Workout-90m to Workout-30m
-  const preWorkoutStart = workout - 90;
-  const preWorkoutEnd = workout - 30;
-  windows.push({
-    name: 'Pre-Workout Snack',
-    startTime: formatMinutesToTime(preWorkoutStart),
-    endTime: formatMinutesToTime(preWorkoutEnd),
-  });
+    // Lunch
+    const midCollege = Math.floor((collegeStart + collegeEnd) / 2);
+    const lunchStart = midCollege > 0 ? Math.min(Math.max(midCollege - 30, 720), 840) : 780;
+    windows.push({
+      name: 'Lunch',
+      startTime: formatMinutesToTime(lunchStart),
+      endTime: formatMinutesToTime(lunchStart + 60),
+    });
 
-  // Post-Workout window: e.g. Workout+60m to Workout+120m
-  const postWorkoutStart = workout + 60;
-  const postWorkoutEnd = workout + 120;
-  windows.push({
-    name: 'Post-Workout / Evening Snack',
-    startTime: formatMinutesToTime(postWorkoutStart),
-    endTime: formatMinutesToTime(postWorkoutEnd),
-  });
+    // Evening snack
+    const snackStart = Math.min(Math.max(collegeEnd + 30, 960), 1110);
+    windows.push({
+      name: 'Evening Snack',
+      startTime: formatMinutesToTime(snackStart),
+      endTime: formatMinutesToTime(snackStart + 60),
+    });
 
-  // Dinner window: e.g. around Sleep-180m to Sleep-90m
-  const dinnerStart = Math.max(postWorkoutEnd + 15, sleep - 180);
-  const dinnerEnd = dinnerStart + 60;
-  windows.push({
-    name: 'Dinner',
-    startTime: formatMinutesToTime(dinnerStart),
-    endTime: formatMinutesToTime(dinnerEnd),
-  });
+    // Dinner
+    const dinnerStart = Math.min(Math.max(sleep - 180, snackStart + 120), sleep - 90);
+    windows.push({
+      name: 'Dinner',
+      startTime: formatMinutesToTime(dinnerStart),
+      endTime: formatMinutesToTime(dinnerStart + 60),
+    });
+  } else {
+    // Standard Routine (Afternoon/Evening workout)
+    // Breakfast window: e.g. Wake+15m to CollegeStart-15m (or Wake+90m)
+    const bfStart = wake + 15;
+    const maxBfEnd = collegeStart > bfStart + 45 ? collegeStart - 15 : bfStart + 60;
+    const bfEnd = wake + 90 < maxBfEnd ? wake + 90 : maxBfEnd;
+    windows.push({
+      name: 'Breakfast',
+      startTime: formatMinutesToTime(bfStart),
+      endTime: formatMinutesToTime(bfEnd > bfStart ? bfEnd : bfStart + 45),
+    });
+
+    // Mid-day / Lunch window
+    let lunchStart: number;
+    if (collegeStart <= 780 && collegeEnd >= 840) {
+      lunchStart = 780; // 13:00
+    } else if (collegeEnd <= 780) {
+      lunchStart = collegeEnd + 30;
+    } else {
+      lunchStart = Math.floor((collegeStart + collegeEnd) / 2) - 30;
+    }
+    windows.push({
+      name: 'Lunch',
+      startTime: formatMinutesToTime(lunchStart),
+      endTime: formatMinutesToTime(lunchStart + 60),
+    });
+
+    // Pre-Workout window: e.g. Workout-90m to Workout-30m
+    const preWorkoutStart = workout - 90;
+    const preWorkoutEnd = workout - 30;
+    windows.push({
+      name: 'Pre-Workout Snack',
+      startTime: formatMinutesToTime(preWorkoutStart),
+      endTime: formatMinutesToTime(preWorkoutEnd),
+    });
+
+    // Post-Workout window: e.g. Workout+60m to Workout+120m (or Workout+duration+15m)
+    const postWorkoutStart = workout + 75 + 15; // default 75m workout + 15m buffer -> 19:30 for 18:00
+    const postWorkoutEnd = postWorkoutStart + 60;
+    windows.push({
+      name: 'Post-Workout / Evening Snack',
+      startTime: formatMinutesToTime(postWorkoutStart),
+      endTime: formatMinutesToTime(postWorkoutEnd),
+    });
+
+    // Dinner window: e.g. around Sleep-180m to Sleep-90m
+    const idealDinnerStart = sleep - 180;
+    const dinnerStart = idealDinnerStart >= postWorkoutEnd + 30 ? idealDinnerStart : postWorkoutEnd + 30;
+    const dinnerEnd = dinnerStart + 60;
+    windows.push({
+      name: 'Dinner',
+      startTime: formatMinutesToTime(dinnerStart),
+      endTime: formatMinutesToTime(dinnerEnd),
+    });
+  }
 
   return windows;
 }

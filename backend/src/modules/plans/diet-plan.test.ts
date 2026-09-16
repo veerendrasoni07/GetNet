@@ -61,4 +61,26 @@ describe('Diet Plan Service & Substitution Engine', () => {
     expect(subs.length).toBeGreaterThan(0);
     expect(subs[0].costDeltaText).toMatch(/^[+-]₹\d+(\.\d+)?\/day$/);
   });
+
+  it('correctly adapts plan for Home living situation without showing Hostel meals', () => {
+    const homeProfile: UserDietProfile = {
+      ...sampleProfile,
+      lifestyle: {
+        ...sampleProfile.lifestyle,
+        livingSituation: 'home',
+        hasMess: false,
+      },
+    };
+
+    const plan = generateCompleteDietPlan(homeProfile, [
+      { mealName: 'lunch', rotiCount: 3, ricePortion: 'medium', dalPortion: 'medium', sabziPortion: 'medium' },
+      { mealName: 'dinner', rotiCount: 3, ricePortion: 'none', dalPortion: 'medium', sabziPortion: 'medium' },
+    ]);
+
+    const allItemNames = plan.dailySchedule.scheduledSlots.flatMap((s) => s.items.map((i) => i.name));
+    // Must NOT contain "Hostel"
+    expect(allItemNames.some((name) => name.includes('Hostel'))).toBe(false);
+    // Must contain "Home-Cooked"
+    expect(allItemNames.some((name) => name.includes('Home-Cooked'))).toBe(true);
+  });
 });

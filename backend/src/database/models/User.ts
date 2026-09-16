@@ -16,7 +16,24 @@ const UserSchema = new Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: false,
+    },
+    googleId: {
+      type: String,
+      sparse: true,
+      unique: true,
+    },
+    picture: {
+      type: String,
+      default: '',
+    },
+    hasCompletedOnboarding: {
+      type: Boolean,
+      default: false,
+    },
+    profileId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Profile',
     },
   },
   {

@@ -33,12 +33,36 @@ export function generateCompleteDietPlan(
   profile: UserDietProfile,
   messSelections: MessMealSelection[]
 ): CompleteDietPlanResponse {
+  const living = profile.lifestyle.livingSituation;
+  const hasMess = profile.lifestyle.hasMess;
+
   // 1. Calculate Nutrition Targets
   const nutritionTarget = calculateNutritionTarget(profile.body, profile.training);
 
   // 2. Estimate Mess/Existing Food Baseline
+  let effectiveMessSelections: MessMealSelection[] = [];
+  if (living === 'hostel' || living === 'pg') {
+    if (hasMess) {
+      const allowedMeals = profile.lifestyle.messMeals && profile.lifestyle.messMeals.length > 0
+        ? profile.lifestyle.messMeals
+        : ['breakfast', 'lunch', 'dinner'];
+      effectiveMessSelections = (messSelections || []).filter((m) => allowedMeals.includes(m.mealName as any));
+    }
+  } else if (living === 'home') {
+    // At home, user eats home-cooked meals (breakfast, lunch, dinner unless specified)
+    const allowedMeals = profile.lifestyle.messMeals && profile.lifestyle.messMeals.length > 0
+      ? profile.lifestyle.messMeals
+      : ['breakfast', 'lunch', 'dinner'];
+    effectiveMessSelections = (messSelections || []).filter((m) => allowedMeals.includes(m.mealName as any));
+  } else if (living === 'alone') {
+    if (hasMess) {
+      const allowedMeals = profile.lifestyle.messMeals || [];
+      effectiveMessSelections = (messSelections || []).filter((m) => allowedMeals.includes(m.mealName as any));
+    }
+  }
+
   const existingDietEstimate = calculateExistingDiet(
-    { meals: messSelections },
+    { meals: effectiveMessSelections },
     profile.body.goal
   );
 
@@ -61,10 +85,11 @@ export function generateCompleteDietPlan(
     profile.schedule,
     existingDietEstimate,
     optimizationResult,
-    messSelections,
+    effectiveMessSelections,
     profile.body.goal,
     nutritionTarget.calories.target,
-    nutritionTarget.protein.target
+    nutritionTarget.protein.target,
+    living
   );
 
   return {

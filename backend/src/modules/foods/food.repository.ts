@@ -300,8 +300,110 @@ export function enrichFoodMetrics(food: Omit<FoodItem, 'costPer10gProtein' | 'co
   };
 }
 
+let inMemoryFoodCache: FoodItem[] | null = null;
+
+export function setInMemoryFoodCache(foods: FoodItem[]): void {
+  inMemoryFoodCache = foods;
+}
+
+/**
+ * Projects a CanonicalFood Mongoose document or record into the FoodItem DTO shape
+ * required by the diet plan optimizer and recommendation engine.
+ */
+export function projectCanonicalToFoodItem(
+  canonical: any,
+  estimatedCostPerServing: number = 20
+): FoodItem {
+  const serving = canonical.servings?.[0] || { name: '100g portion', grams: 100 };
+  const servingGrams = serving.grams || 100;
+  const scale = servingGrams / 100;
+
+  const calories = Math.round((canonical.nutrition?.caloriesKcal || 0) * scale);
+  const protein = Number(((canonical.nutrition?.proteinG || 0) * scale).toFixed(1));
+  const carbs = Number(((canonical.nutrition?.carbohydratesG || 0) * scale).toFixed(1));
+  const fat = Number(((canonical.nutrition?.fatG || 0) * scale).toFixed(1));
+  const fiber = Number(((canonical.nutrition?.fiberG || 0) * scale).toFixed(1));
+
+  let dietType: any = 'vegetarian';
+  const tags = canonical.dietaryTags || [];
+  if (tags.includes('vegan')) dietType = 'vegan';
+  else if (tags.includes('vegetarian')) dietType = 'vegetarian';
+  else if (tags.includes('eggetarian')) dietType = 'eggetarian';
+  else if (tags.includes('non_vegetarian')) dietType = 'non_vegetarian';
+
+  const rawItem: Omit<FoodItem, 'costPer10gProtein' | 'costPer100Calories' | 'proteinPer100Calories'> = {
+    id: canonical._id ? String(canonical._id) : `food_${canonical.name.replace(/\s+/g, '_')}`,
+    name: canonical.displayName || canonical.name,
+    servingUnit: serving.name,
+    servingSizeGramsOrMl: servingGrams,
+    calories,
+    protein,
+    carbs,
+    fat,
+    fiber,
+    estimatedCostInr: estimatedCostPerServing,
+    dietType,
+    cookingRequired: canonical.cookingRequired ?? false,
+    requiredEquipment: canonical.requiredEquipment || [],
+    fridgeRequired: canonical.fridgeRequired ?? false,
+    portability: canonical.portability || 'medium',
+    hostelSuitability: canonical.hostelSuitability || 'good',
+    allowedMealCategories: canonical.allowedMealCategories || ['snack'],
+    minServingsPerDay: canonical.minServingsPerDay ?? 0.5,
+    maxServingsPerDay: canonical.maxServingsPerDay ?? 2,
+  };
+
+  return enrichFoodMetrics(rawItem);
+}
+
 export function getAllFoods(): FoodItem[] {
+  if (inMemoryFoodCache && inMemoryFoodCache.length > 0) {
+    return inMemoryFoodCache;
+  }
   return INITIAL_FOOD_DATABASE.map(enrichFoodMetrics);
 }
 
+/**
+ * Asynchronously loads active foods from MongoDB, evaluates location-aware prices,
+ * and caches them for subsequent recommendation runs.
+ */
+export async function getAllFoodsAsync(location?: { city: string; state?: string }): Promise<FoodItem[]> {
+  try {
+    const { CanonicalFood } = await import('../../database/models/CanonicalFood');
+    const { CurrentPriceEngine } = await import('./services/price.engine');
+
+    const dbFoods = await CanonicalFood.find({ isActive: true }).lean();
+    if (!dbFoods || dbFoods.length === 0) {
+      return getAllFoods();
+    }
+
+    const priceEngine = new CurrentPriceEngine();
+    const targetLoc = location || { city: 'Indore', state: 'Madhya Pradesh' };
+
+    const projected: FoodItem[] = [];
+    for (const food of dbFoods) {
+      try {
+        const priceResult = await priceEngine.getBestPrice(food, targetLoc);
+        const servingGrams = food.servings?.[0]?.grams || 100;
+        const costPerServing = Number(
+          ((priceResult.estimatedPrice / 100) * servingGrams).toFixed(2)
+        );
+        projected.push(projectCanonicalToFoodItem(food, costPerServing));
+      } catch {
+        projected.push(projectCanonicalToFoodItem(food, 20));
+      }
+    }
+
+    if (projected.length > 0) {
+      inMemoryFoodCache = projected;
+      return projected;
+    }
+  } catch {
+    // Fall back to static dataset
+  }
+
+  return getAllFoods();
+}
+
 /** Food repository provides verified nutritional profiles tailored for student and budget diets. */
+
