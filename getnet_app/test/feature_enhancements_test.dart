@@ -72,7 +72,7 @@ void main() {
       expect(replacedItem['protein'], 24);
       expect(replacedItem['calories'], 280);
       expect(replacedItem['estimatedCostInr'], 30);
-      expect(replacedItem['quantityText'], '2 x 2 eggs');
+      expect(replacedItem['quantityText'], '4 Eggs');
 
       // Verify cost delta applied to monthly budget: 2000 + (-15 * 30) = 1550
       expect(updatedPlan.optimizationResult['monthlyCostInr'], 1550);

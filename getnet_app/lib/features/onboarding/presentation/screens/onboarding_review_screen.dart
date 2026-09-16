@@ -71,7 +71,7 @@ class OnboardingReviewScreen extends ConsumerWidget {
                       ),
                       if (l.hasMess) ...[
                         _ReviewSectionCard(
-                          title: 'Hostel Mess Meals',
+                          title: l.livingArrangement == 'pg' ? 'PG Mess Meals' : (l.livingArrangement == 'hostel' ? 'Hostel Mess Meals' : 'Mess Meals'),
                           value: l.messMeals.isEmpty
                               ? 'No mess meals selected'
                               : '${l.messMeals.map((m) => m[0].toUpperCase() + m.substring(1)).join(", ")} (${state.messSelections.length} custom portions)',

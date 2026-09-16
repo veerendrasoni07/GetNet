@@ -1,3 +1,5 @@
+import '../../../core/utils/quantity_formatter.dart';
+
 class DietPlanResponse {
   final Map<String, dynamic> nutritionTarget;
   final Map<String, dynamic> existingDietEstimate;
@@ -71,7 +73,7 @@ class DietPlanResponse {
             itemsCopy[j] = {
               'name': newName,
               'foodId': newFoodId,
-              'quantityText': '$servings x $servingUnit',
+              'quantityText': QuantityFormatter.formatAbsoluteQuantity((servings as num).toDouble(), servingUnit, newName),
               'estimatedCostInr': newCost,
               'protein': newProtein,
               'calories': newCalories,

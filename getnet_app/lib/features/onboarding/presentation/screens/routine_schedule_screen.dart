@@ -5,16 +5,39 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/progress_header.dart';
+import '../../domain/schedule_calculator.dart';
 import '../onboarding_controller.dart';
 
 class RoutineScheduleScreen extends ConsumerWidget {
   const RoutineScheduleScreen({super.key});
+
+  TimeOfDay _parseTimeOfDay(String timeStr, int defaultHour, int defaultMinute) {
+    try {
+      final parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        return TimeOfDay(
+          hour: int.tryParse(parts[0]) ?? defaultHour,
+          minute: int.tryParse(parts[1].split(' ')[0]) ?? defaultMinute,
+        );
+      }
+    } catch (_) {}
+    return TimeOfDay(hour: defaultHour, minute: defaultMinute);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
     final l = state.lifestyle;
+
+    final derivedWindows = deriveEatingWindows(
+      wakeTime: l.wakeTime,
+      collegeStartTime: l.workOrCollegeStartTime,
+      collegeEndTime: l.workOrCollegeEndTime,
+      workoutTime: state.training.usualWorkoutTime,
+      sleepTime: l.sleepTime,
+      workoutDurationMinutes: state.training.workoutDurationMinutes,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -46,7 +69,8 @@ class RoutineScheduleScreen extends ConsumerWidget {
                         label: 'Wake Up',
                         icon: Icons.wb_sunny_outlined,
                         onTap: () async {
-                          final t = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 7, minute: 0));
+                          final current = _parseTimeOfDay(l.wakeTime, 7, 0);
+                          final t = await showTimePicker(context: context, initialTime: current);
                           if (t != null) controller.updateLifestyle(wakeTime: '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}');
                         },
                       ),
@@ -55,7 +79,8 @@ class RoutineScheduleScreen extends ConsumerWidget {
                         label: 'College / Work Starts',
                         icon: Icons.school_outlined,
                         onTap: () async {
-                          final t = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 9, minute: 0));
+                          final current = _parseTimeOfDay(l.workOrCollegeStartTime, 9, 0);
+                          final t = await showTimePicker(context: context, initialTime: current);
                           if (t != null) controller.updateLifestyle(workOrCollegeStartTime: '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}');
                         },
                       ),
@@ -64,7 +89,8 @@ class RoutineScheduleScreen extends ConsumerWidget {
                         label: 'College / Work Ends',
                         icon: Icons.business_outlined,
                         onTap: () async {
-                          final t = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 16, minute: 0));
+                          final current = _parseTimeOfDay(l.workOrCollegeEndTime, 16, 0);
+                          final t = await showTimePicker(context: context, initialTime: current);
                           if (t != null) controller.updateLifestyle(workOrCollegeEndTime: '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}');
                         },
                       ),
@@ -73,7 +99,8 @@ class RoutineScheduleScreen extends ConsumerWidget {
                         label: 'Workout',
                         icon: Icons.fitness_center,
                         onTap: () async {
-                          final t = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 18, minute: 0));
+                          final current = _parseTimeOfDay(state.training.usualWorkoutTime, 18, 0);
+                          final t = await showTimePicker(context: context, initialTime: current);
                           if (t != null) controller.updateTraining(usualWorkoutTime: '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}');
                         },
                       ),
@@ -82,7 +109,8 @@ class RoutineScheduleScreen extends ConsumerWidget {
                         label: 'Sleep',
                         icon: Icons.bedtime_outlined,
                         onTap: () async {
-                          final t = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 0, minute: 0));
+                          final current = _parseTimeOfDay(l.sleepTime, 0, 0);
+                          final t = await showTimePicker(context: context, initialTime: current);
                           if (t != null) controller.updateLifestyle(sleepTime: '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}');
                         },
                       ),
@@ -95,10 +123,10 @@ class RoutineScheduleScreen extends ConsumerWidget {
                           color: AppColors.primaryLight,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Column(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            const Row(
                               children: [
                                 Icon(Icons.auto_awesome, color: AppColors.primary, size: 20),
                                 SizedBox(width: AppSpacing.sm),
@@ -110,9 +138,16 @@ class RoutineScheduleScreen extends ConsumerWidget {
                                 ),
                               ],
                             ),
-                            SizedBox(height: AppSpacing.xs),
-                            Text('• Breakfast: 7:15 - 8:30 AM\n• Lunch: 1:00 - 2:00 PM\n• Pre-workout: 4:30 - 5:30 PM\n• Post-workout: 7:30 - 8:30 PM\n• Dinner: 9:00 - 10:00 PM',
-                                style: TextStyle(fontSize: 12, color: AppColors.primaryDark, height: 1.4)),
+                            const SizedBox(height: AppSpacing.xs),
+                            ...derivedWindows.map(
+                              (w) => Padding(
+                                padding: const EdgeInsets.only(top: 2.0),
+                                child: Text(
+                                  '• ${w.name}: ${w.displayRange}',
+                                  style: const TextStyle(fontSize: 12, color: AppColors.primaryDark, height: 1.4),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),

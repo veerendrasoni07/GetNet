@@ -34,6 +34,39 @@ class DietPlanRepository {
   Future<void> logWeight(Map<String, dynamic> payload) async {
     await _apiClient.post(ApiEndpoints.logWeight, data: payload);
   }
+
+  Future<Map<String, dynamic>?> submitAdaptiveCheckin(Map<String, dynamic> payload) async {
+    final res = await _apiClient.post(ApiEndpoints.adaptiveCheckin, data: payload);
+    if (res.data != null && res.data['success'] == true) {
+      return res.data['data'] as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> getFoods({String? search, String? category, String? city}) async {
+    final query = <String, dynamic>{
+      if (search != null) 'search': search,
+      if (category != null) 'category': category,
+      if (city != null) 'city': city,
+    };
+    final res = await _apiClient.get(ApiEndpoints.foods, queryParameters: query);
+    if (res.data != null && res.data['success'] == true) {
+      final List list = res.data['data'] ?? [];
+      return list.cast<Map<String, dynamic>>();
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>?> getFoodDetails(String foodId, {String? city}) async {
+    final query = <String, dynamic>{
+      if (city != null) 'city': city,
+    };
+    final res = await _apiClient.get(ApiEndpoints.foodDetails(foodId), queryParameters: query);
+    if (res.data != null && res.data['success'] == true) {
+      return res.data['data'] as Map<String, dynamic>;
+    }
+    return null;
+  }
 }
 
 final apiClientProvider = Provider((ref) => ApiClient());

@@ -1,4 +1,5 @@
 import 'onboarding_models.dart';
+import 'schedule_calculator.dart';
 
 class OnboardingState {
   final PhysiqueData physique;
@@ -56,6 +57,29 @@ class OnboardingState {
   }
 
   Map<String, dynamic> toBackendPayload() {
+    final derived = deriveEatingWindows(
+      wakeTime: lifestyle.wakeTime,
+      collegeStartTime: lifestyle.workOrCollegeStartTime,
+      collegeEndTime: lifestyle.workOrCollegeEndTime,
+      workoutTime: training.usualWorkoutTime,
+      sleepTime: lifestyle.sleepTime,
+      workoutDurationMinutes: training.workoutDurationMinutes,
+    );
+
+    final living = lifestyle.livingArrangement;
+    final List<MessMealItem> activeMessSelections;
+    if (living == 'hostel' || living == 'pg') {
+      activeMessSelections = lifestyle.hasMess
+          ? messSelections.where((m) => lifestyle.messMeals.contains(m.mealName)).toList()
+          : [];
+    } else if (living == 'home') {
+      activeMessSelections = messSelections.where((m) => lifestyle.messMeals.isEmpty || lifestyle.messMeals.contains(m.mealName)).toList();
+    } else {
+      activeMessSelections = lifestyle.hasMess
+          ? messSelections.where((m) => lifestyle.messMeals.contains(m.mealName)).toList()
+          : [];
+    }
+
     return {
       'profile': {
         'body': physique.toJson()..['goal'] = goal.type,
@@ -72,11 +96,12 @@ class OnboardingState {
           'collegeWorkEndTime': lifestyle.workOrCollegeEndTime,
           'workoutTime': training.usualWorkoutTime,
           'sleepTime': lifestyle.sleepTime,
+          'derivedWindows': derived.map((w) => w.toJson()).toList(),
         },
         'budget': budget.toJson(),
         'preferences': preferences.toJson(),
       },
-      'messSelections': messSelections.map((m) => m.toJson()).toList(),
+      'messSelections': activeMessSelections.map((m) => m.toJson()).toList(),
     };
   }
 }

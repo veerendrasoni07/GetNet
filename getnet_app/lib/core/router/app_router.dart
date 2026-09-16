@@ -1,4 +1,7 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/auth/presentation/auth_controller.dart';
+import '../../features/auth/presentation/login_screen.dart';
 import '../../features/dashboard/presentation/today_dashboard_screen.dart';
 import '../../features/diet_plan/presentation/plan_result_screen.dart';
 import '../../features/onboarding/presentation/screens/body_details_screen.dart';
@@ -14,66 +17,105 @@ import '../../features/onboarding/presentation/screens/routine_schedule_screen.d
 import '../../features/onboarding/presentation/screens/training_profile_screen.dart';
 import '../../features/progress/presentation/progress_screen.dart';
 
-final GoRouter appRouter = GoRouter(
-  initialLocation: '/intro',
-  routes: [
-    GoRoute(
-      path: '/intro',
-      builder: (context, state) => const IntroScreen(),
-    ),
-    GoRoute(
-      path: '/onboarding/goal',
-      builder: (context, state) => const GoalSelectionScreen(),
-    ),
-    GoRoute(
-      path: '/onboarding/body',
-      builder: (context, state) => const BodyDetailsScreen(),
-    ),
-    GoRoute(
-      path: '/onboarding/training',
-      builder: (context, state) => const TrainingProfileScreen(),
-    ),
-    GoRoute(
-      path: '/onboarding/living',
-      builder: (context, state) => const LivingSituationScreen(),
-    ),
-    GoRoute(
-      path: '/onboarding/mess',
-      builder: (context, state) => const HostelMessScreen(),
-    ),
-    GoRoute(
-      path: '/onboarding/preferences',
-      builder: (context, state) => const FoodPreferencesScreen(),
-    ),
-    GoRoute(
-      path: '/onboarding/budget',
-      builder: (context, state) => const BudgetProfileScreen(),
-    ),
-    GoRoute(
-      path: '/onboarding/routine',
-      builder: (context, state) => const RoutineScheduleScreen(),
-    ),
-    GoRoute(
-      path: '/onboarding/review',
-      builder: (context, state) => const OnboardingReviewScreen(),
-    ),
-    GoRoute(
-      path: '/onboarding/plan-loading',
-      builder: (context, state) => const PlanLoadingScreen(),
-    ),
-    GoRoute(
-      path: '/plan-result',
-      builder: (context, state) => const PlanResultScreen(),
-    ),
-    GoRoute(
-      path: '/dashboard',
-      builder: (context, state) => const TodayDashboardScreen(),
-    ),
-    GoRoute(
-      path: '/progress',
-      builder: (context, state) => const ProgressScreen(),
-    ),
-  ],
-);
+List<RouteBase> get _appRoutes => [
+  GoRoute(
+    path: '/login',
+    builder: (context, state) => const LoginScreen(),
+  ),
+  GoRoute(
+    path: '/intro',
+    builder: (context, state) => const IntroScreen(),
+  ),
+  GoRoute(
+    path: '/onboarding/goal',
+    builder: (context, state) => const GoalSelectionScreen(),
+  ),
+  GoRoute(
+    path: '/onboarding/body',
+    builder: (context, state) => const BodyDetailsScreen(),
+  ),
+  GoRoute(
+    path: '/onboarding/training',
+    builder: (context, state) => const TrainingProfileScreen(),
+  ),
+  GoRoute(
+    path: '/onboarding/living',
+    builder: (context, state) => const LivingSituationScreen(),
+  ),
+  GoRoute(
+    path: '/onboarding/mess',
+    builder: (context, state) => const HostelMessScreen(),
+  ),
+  GoRoute(
+    path: '/onboarding/preferences',
+    builder: (context, state) => const FoodPreferencesScreen(),
+  ),
+  GoRoute(
+    path: '/onboarding/budget',
+    builder: (context, state) => const BudgetProfileScreen(),
+  ),
+  GoRoute(
+    path: '/onboarding/routine',
+    builder: (context, state) => const RoutineScheduleScreen(),
+  ),
+  GoRoute(
+    path: '/onboarding/review',
+    builder: (context, state) => const OnboardingReviewScreen(),
+  ),
+  GoRoute(
+    path: '/onboarding/plan-loading',
+    builder: (context, state) => const PlanLoadingScreen(),
+  ),
+  GoRoute(
+    path: '/plan-result',
+    builder: (context, state) => const PlanResultScreen(),
+  ),
+  GoRoute(
+    path: '/dashboard',
+    builder: (context, state) => const TodayDashboardScreen(),
+  ),
+  GoRoute(
+    path: '/progress',
+    builder: (context, state) => const ProgressScreen(),
+  ),
+];
 
-// Centralized declarative GoRouter specification with typed navigation routes.
+final appRouterProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authControllerProvider);
+
+  return GoRouter(
+    initialLocation: '/login',
+    routes: _appRoutes,
+    redirect: (context, state) {
+      final isLoggingIn = state.matchedLocation == '/login';
+      final isAuthenticated = authState.isAuthenticated;
+
+      // If auth session check isn't finished yet, don't redirect
+      if (!authState.isInitialCheckDone) {
+        return null;
+      }
+
+      // If not logged in and not on login screen, redirect to login
+      if (!isAuthenticated && !isLoggingIn) {
+        return '/login';
+      }
+
+      // If logged in and on login screen, redirect to appropriate destination
+      if (isAuthenticated && isLoggingIn) {
+        if (authState.hasCompletedOnboarding) {
+          return '/dashboard';
+        } else {
+          return '/intro';
+        }
+      }
+
+      return null;
+    },
+  );
+});
+
+// Default standalone router instance for tests and direct access
+final GoRouter appRouter = GoRouter(
+  initialLocation: '/login',
+  routes: _appRoutes,
+);

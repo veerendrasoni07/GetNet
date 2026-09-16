@@ -5,6 +5,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../onboarding/presentation/screens/plan_loading_screen.dart';
+import '../../onboarding/presentation/onboarding_controller.dart';
+import '../../auth/presentation/auth_controller.dart';
 
 class PlanResultScreen extends ConsumerWidget {
   const PlanResultScreen({super.key});
@@ -12,6 +14,7 @@ class PlanResultScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final plan = ref.watch(latestGeneratedPlanProvider);
+    final state = ref.watch(onboardingControllerProvider);
 
     if (plan == null) {
       return Scaffold(
@@ -149,8 +152,22 @@ class PlanResultScreen extends ConsumerWidget {
                         child: Text('Why this plan fits you', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      const _RationaleBullet(text: 'Built around your hostel mess routine'),
-                      const _RationaleBullet(text: 'No kitchen equipment required'),
+                      _RationaleBullet(
+                        text: state.lifestyle.livingArrangement == 'home'
+                            ? 'Built around your home-cooked family meals'
+                            : (state.lifestyle.livingArrangement == 'pg'
+                                ? (state.lifestyle.hasMess ? 'Built around your PG mess routine' : 'Tailored for your PG accommodation')
+                                : (state.lifestyle.livingArrangement == 'alone'
+                                    ? 'Tailored for independent apartment cooking'
+                                    : (state.lifestyle.hasMess ? 'Built around your hostel mess routine' : 'Designed for hostel living without mess'))),
+                      ),
+                      _RationaleBullet(
+                        text: (state.lifestyle.availableEquipment.isEmpty || state.lifestyle.availableEquipment.contains('none'))
+                            ? 'No kitchen equipment required'
+                            : (state.lifestyle.availableEquipment.contains('refrigerator') && (state.lifestyle.availableEquipment.contains('induction') || state.lifestyle.availableEquipment.contains('microwave'))
+                                ? 'Optimized for your full kitchen & fridge access'
+                                : 'Compatible with your available kitchen equipment'),
+                      ),
                       const _RationaleBullet(text: 'Prioritizes high protein per rupee'),
                       const _RationaleBullet(text: 'Time-slotted around your workout schedule'),
                     ],
@@ -160,7 +177,10 @@ class PlanResultScreen extends ConsumerWidget {
               PrimaryButton(
                 text: "Go to Today's Dashboard",
                 icon: Icons.dashboard_rounded,
-                onPressed: () => context.go('/dashboard'),
+                onPressed: () {
+                  ref.read(authControllerProvider.notifier).completeOnboarding();
+                  context.go('/dashboard');
+                },
               ),
               const SizedBox(height: AppSpacing.lg),
             ],

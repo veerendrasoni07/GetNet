@@ -12,16 +12,18 @@ void main() {
   );
 }
 
-class GetNutritionApp extends StatelessWidget {
+class GetNutritionApp extends ConsumerWidget {
   const GetNutritionApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+
     return MaterialApp.router(
       title: 'GetNutrition',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      routerConfig: appRouter,
+      routerConfig: router,
     );
   }
 }

@@ -12,64 +12,74 @@ class IntroScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePaddingHorizontal),
-          child: Column(
-            children: [
-              const Spacer(),
-              // Minimal Illustration / Icon Header
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  shape: BoxShape.circle,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePaddingHorizontal),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      const Spacer(),
+                      // Minimal Illustration / Icon Header
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryLight,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.fitness_center_rounded,
+                          size: 48,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      const Text(
+                        'A diet built around your life.',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      const Column(
+                        children: [
+                          _ValueBullet(text: 'Your body'),
+                          SizedBox(height: AppSpacing.sm),
+                          _ValueBullet(text: 'Your routine'),
+                          SizedBox(height: AppSpacing.sm),
+                          _ValueBullet(text: 'Your budget'),
+                          SizedBox(height: AppSpacing.sm),
+                          _ValueBullet(text: 'Your goal'),
+                        ],
+                      ),
+                      const Spacer(),
+                      const SizedBox(height: AppSpacing.lg),
+                      PrimaryButton(
+                        text: 'Build My Plan',
+                        onPressed: () => context.push('/onboarding/goal'),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      const Text(
+                        'Takes only a few minutes • No signup required to start',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
+                  ),
                 ),
-                child: const Icon(
-                  Icons.fitness_center_rounded,
-                  size: 48,
-                  color: AppColors.primary,
-                ),
               ),
-              const SizedBox(height: AppSpacing.xxl),
-              const Text(
-                'A diet built around your life.',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              const Column(
-                children: [
-                  _ValueBullet(text: 'Your body'),
-                  SizedBox(height: AppSpacing.sm),
-                  _ValueBullet(text: 'Your routine'),
-                  SizedBox(height: AppSpacing.sm),
-                  _ValueBullet(text: 'Your budget'),
-                  SizedBox(height: AppSpacing.sm),
-                  _ValueBullet(text: 'Your goal'),
-                ],
-              ),
-              const Spacer(),
-              PrimaryButton(
-                text: 'Build My Plan',
-                onPressed: () => context.push('/onboarding/goal'),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              const Text(
-                'Takes only a few minutes • No signup required to start',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/utils/quantity_formatter.dart';
 import '../../../onboarding/presentation/onboarding_controller.dart';
 import '../../data/diet_plan_repository.dart';
 
@@ -101,6 +102,8 @@ class _ReplacementBottomSheetState extends ConsumerState<ReplacementBottomSheet>
                 final protein = opt['protein'] ?? 0;
                 final calories = opt['calories'] ?? 0;
 
+                final qtyText = QuantityFormatter.formatAbsoluteQuantity((servings as num).toDouble(), servingUnit, name);
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: AppSpacing.sm),
                   decoration: BoxDecoration(
@@ -110,7 +113,7 @@ class _ReplacementBottomSheetState extends ConsumerState<ReplacementBottomSheet>
                   ),
                   child: ListTile(
                     title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                    subtitle: Text('$servings x $servingUnit • ${protein}g protein, $calories kcal', style: const TextStyle(fontSize: 12)),
+                    subtitle: Text('$qtyText • ${protein}g protein, $calories kcal', style: const TextStyle(fontSize: 12)),
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,

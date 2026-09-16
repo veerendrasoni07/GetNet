@@ -70,9 +70,11 @@ class LivingSituationScreen extends ConsumerWidget {
                 ),
               ),
               PrimaryButton(
-                text: 'Continue',
+                text: context.canPop() && (currentLiving == 'home' || currentLiving == 'alone') ? 'Save & Review Profile' : 'Continue',
                 onPressed: () {
-                  if (currentLiving == 'hostel' || currentLiving == 'pg') {
+                  if (context.canPop() && (currentLiving == 'home' || currentLiving == 'alone')) {
+                    context.pop();
+                  } else if (currentLiving == 'hostel' || currentLiving == 'pg') {
                     context.push('/onboarding/mess');
                   } else {
                     context.push('/onboarding/preferences');

@@ -4,10 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/quantity_formatter.dart';
 import '../../../core/widgets/animated_number.dart';
 import '../../diet_plan/data/diet_plan_repository.dart';
 import '../../diet_plan/presentation/widgets/replacement_bottom_sheet.dart';
+import '../../onboarding/presentation/onboarding_controller.dart';
 import '../../onboarding/presentation/screens/plan_loading_screen.dart';
+import '../../auth/presentation/auth_controller.dart';
 
 class TodayDashboardScreen extends ConsumerStatefulWidget {
   const TodayDashboardScreen({super.key});
@@ -18,6 +21,26 @@ class TodayDashboardScreen extends ConsumerStatefulWidget {
 
 class _TodayDashboardScreenState extends ConsumerState<TodayDashboardScreen> {
   final Map<String, bool> _completedItems = {};
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _startPlanGenerationPipeline();
+  }
+  Future<void> _startPlanGenerationPipeline() async {
+
+    try {
+      final state = ref.read(onboardingControllerProvider);
+      final payload = state.toBackendPayload();
+
+      final response = await ref.read(dietPlanRepositoryProvider).generatePlan(payload);
+
+      if (!mounted) return;
+      ref.read(latestGeneratedPlanProvider.notifier).state = response;
+    } catch (e) {
+      if (!mounted) return;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,10 +83,82 @@ class _TodayDashboardScreenState extends ConsumerState<TodayDashboardScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push('/onboarding/review'),
+          PopupMenuButton<String>(
+            tooltip: 'Account',
+            offset: const Offset(0, 48),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            icon: Consumer(
+              builder: (context, ref, child) {
+                final user = ref.watch(authControllerProvider).user;
+                if (user?.picture != null && user!.picture!.isNotEmpty) {
+                  return CircleAvatar(
+                    radius: 16,
+                    backgroundImage: NetworkImage(user.picture!),
+                    backgroundColor: AppColors.primaryLight,
+                  );
+                }
+                final initial = (user?.name.isNotEmpty == true) ? user!.name[0].toUpperCase() : 'U';
+                return CircleAvatar(
+                  radius: 16,
+                  backgroundColor: AppColors.primary,
+                  child: Text(
+                    initial,
+                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                );
+              },
+            ),
+            onSelected: (val) {
+              if (val == 'settings') {
+                context.push('/onboarding/review');
+              } else if (val == 'logout') {
+                ref.read(authControllerProvider.notifier).signOut();
+              }
+            },
+            itemBuilder: (context) {
+              final user = ref.read(authControllerProvider).user;
+              return [
+                PopupMenuItem<String>(
+                  enabled: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user?.name ?? 'Student',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      ),
+                      Text(
+                        user?.email ?? '',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                      const Divider(),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'settings',
+                  child: Row(
+                    children: [
+                      Icon(Icons.tune_rounded, size: 18, color: AppColors.textSecondary),
+                      SizedBox(width: 8),
+                      Text('Diet Settings'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout_rounded, size: 18, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Sign Out', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ];
+            },
           ),
+          const SizedBox(width: 8),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -190,7 +285,8 @@ class _TodayDashboardScreenState extends ConsumerState<TodayDashboardScreen> {
                                 Column(
                                   children: items.map<Widget>((item) {
                                     final itemName = item['name'] ?? 'Food';
-                                    final qty = item['quantityText'] ?? '';
+                                    final rawQty = item['quantityText'] ?? '';
+                                    final qty = QuantityFormatter.cleanQuantityText(rawQty, itemName);
                                     final cost = item['estimatedCostInr'] ?? 0;
                                     final foodId = item['foodId'] ?? '';
                                     final key = '${slotName}_$itemName';

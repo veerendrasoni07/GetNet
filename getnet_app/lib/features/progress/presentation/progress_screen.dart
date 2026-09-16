@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../diet_plan/data/diet_plan_repository.dart';
 import '../../onboarding/presentation/onboarding_controller.dart';
 import '../domain/badge_model.dart';
 import 'widgets/animated_streak_card.dart';
@@ -289,6 +290,11 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                 _completedDays = updatedDays;
               });
               ref.read(onboardingControllerProvider.notifier).updatePhysique(weightKg: tempWeight);
+              ref.read(dietPlanRepositoryProvider).logWeight({
+                'userId': 'user_local',
+                'date': DateTime.now().toIso8601String().split('T')[0],
+                'weightKg': tempWeight,
+              });
               Navigator.pop(context);
 
               ScaffoldMessenger.of(context).showSnackBar(

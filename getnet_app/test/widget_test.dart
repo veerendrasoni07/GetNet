@@ -10,8 +10,8 @@ void main() {
       ),
     );
 
-    // Verify intro screen renders
-    expect(find.text('A diet built around your life.'), findsOneWidget);
-    expect(find.text('Build My Plan'), findsOneWidget);
+    // Verify initial LoginScreen renders with Google sign in button
+    expect(find.text('GetNutrition'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
   });
 }
